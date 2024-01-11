@@ -12,8 +12,8 @@ load("data\utah_meta.mat")
 load("data\utah_temp.mat")
 
 traffic.Y{1} = utah_traffic(:,3:end);
-traffic.weekend{1} = table2array(utah_traffic(:,1));
-traffic.holiday{1} = table2array(utah_traffic(:,2));
+traffic.weekend{1} = utah_traffic(:,1);
+traffic.holiday{1} = utah_traffic(:,2);
 traffic.prec{1} = utah_prec(:,:);
 traffic.temp{1} = utah_temp(:,:);
 traffic.latitude = utah_MetaData(:,2);
@@ -52,4 +52,3 @@ traffic.X_beta{1} = [traffic.weekend{1} traffic.holiday{1} traffic.mean_temp{1} 
 traffic.X_p = traffic.route_type;
 
 save("traffic.mat")
-
