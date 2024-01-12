@@ -106,3 +106,5 @@ obj_stem_krig_result{1}.plot(1)
 print(obj_stem_model)
 obj_stem_model.stem_EM_result
 plot(obj_stem_model.stem_EM_result.stem_kalmansmoother_result)
+
+plot(stem_EM_options)
