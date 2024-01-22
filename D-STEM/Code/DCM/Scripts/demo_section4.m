@@ -73,10 +73,8 @@ obj_stem_par.sigma_eps = 0.3;
 obj_stem_model.set_initial_values(obj_stem_par);
 
 % Model estimation
-exit_toll = 0.001;
-max_iterations = 100;
 obj_stem_EM_options = stem_EM_options();
-obj_stem_EM_options.max_iterations = 100;
+obj_stem_EM_options.max_iterations = 2;
 obj_stem_model.EM_estimate(obj_stem_EM_options);
 obj_stem_model.set_varcov;
 obj_stem_model.set_logL;
@@ -91,7 +89,7 @@ krig_mask = krig_elevation.data_mask;
 obj_stem_krig_grid = stem_grid(krig_coordinates, 'deg', 'regular','pixel',size(LAT),'square',0.75,0.75);
 
 obj_stem_krig_data = stem_krig_data(obj_stem_krig_grid,krig_covariates.data,krig_covariates.names,krig_mask);
-obj_stem_krig = stem_krig(obj_stem_model,obj_stem_krig_data);
+obj_stem_krig = stem_krig(obj_stem_model, obj_stem_krig_data);
 
 obj_stem_krig_options = stem_krig_options();
 obj_stem_krig_options.block_size = 500;

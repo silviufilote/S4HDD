@@ -13,21 +13,21 @@ load("dtraffic.mat")
 ns = size(dtraffic.Y{1}, 1);                         % number of stations    
 T = size(dtraffic.Y{1}, 2);                          % number of time steps
 
-% % Process 1
-% X_beta = dtraffic.X_beta{1};
-% X_beta_name = dtraffic.X_beta_name{1};
-% X_z = ones(ns, 1);
-% X_z_name = {'constant'};
-% X_p = dtraffic.X_spa{1};
-% X_p_name = dtraffic.X_spa_name{1};
-% theta_p = [30 30 30];
-% sigma_eta = 0.2;
-% G = 0.8;
-% 
-% [obj_stem_model1, obj_stem_validation1, EM_result1] = model_estimate(dtraffic, X_beta, X_beta_name, ...
-%                                                                                X_z, X_z_name, ...
-%                                                                                X_p, X_p_name, ...
-%                                                                                theta_p, sigma_eta, G, 2);
+% Process 1
+X_beta = dtraffic.X_beta{1};
+X_beta_name = dtraffic.X_beta_name{1};
+X_z = ones(ns, 1);
+X_z_name = {'constant'};
+X_p = dtraffic.X_spa{1};
+X_p_name = dtraffic.X_spa_name{1};
+theta_p = [30 30 30];
+sigma_eta = 0.2;
+G = 0.8;
+
+[obj_stem_model1, obj_stem_validation1, EM_result1] = model_estimate(dtraffic, X_beta, X_beta_name, ...
+                                                                               X_z, X_z_name, ...
+                                                                               X_p, X_p_name, ...
+                                                                               theta_p, sigma_eta, G, 2);
 
 % % Process 2
 % X_beta = dtraffic.X_beta{1};
@@ -138,32 +138,56 @@ T = size(dtraffic.Y{1}, 2);                          % number of time steps
 %%%%%%%%%%%%%%%%%%%%%      Verify convergence EM     %%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-X_beta = ones(ns,4,T);
-X_beta(:,1,:) = dtraffic.X_beta{1}(:,1,:); 
-X_beta(:,2,:) = dtraffic.X_beta{1}(:,3,:); 
-X_beta(:,3,:) = dtraffic.X_beta{1}(:,6,:); 
-X_beta(:,4,:) = dtraffic.X_beta{1}(:,7,:); 
-X_beta_name = {'weekend', 'mean prec', 'US', 'RS'};
+% X_beta = ones(ns,4,T);
+% X_beta(:,1,:) = dtraffic.X_beta{1}(:,1,:); 
+% X_beta(:,2,:) = dtraffic.X_beta{1}(:,3,:); 
+% X_beta(:,3,:) = dtraffic.X_beta{1}(:,6,:); 
+% X_beta(:,4,:) = dtraffic.X_beta{1}(:,7,:); 
+% X_beta_name = {'weekend', 'mean prec', 'US', 'RS'};
+% 
+% X_z = ones(ns, 1);
+% X_z_name = {'constant'};
+% X_p = dtraffic.X_spa{1};
+% X_p_name = dtraffic.X_spa_name{1};
+% theta_p = [100 100 100];                    % poco identificabili
+% 
+% models_AIC.info = ones(20,4);
+% for x = 1:20
+%     sigma_eta = randi(10,1) *  rand(1,1);
+%     G = -1 + 2*rand(1,1);
+%     [obj_stem_model, obj_stem_validation, EM_result] = model_estimate(dtraffic, X_beta, X_beta_name, ...
+%                                                                                X_z, X_z_name, ...
+%                                                                                X_p, X_p_name, ...
+%                                                                                theta_p, sigma_eta, G, 2);
+% 
+%     models_AIC.info(x,:) = [obj_stem_model.stem_EM_result.logL obj_stem_model.stem_EM_result.AIC sigma_eta G];
+%     models_AIC.models{x} = obj_stem_model;
+% end
 
-X_z = ones(ns, 1);
-X_z_name = {'constant'};
-X_p = dtraffic.X_spa{1};
-X_p_name = dtraffic.X_spa_name{1};
-theta_p = [100 100 100];                    % poco identificabili
 
-models_AIC.info = ones(20,4);
-for x = 1:20
-    sigma_eta = randi(10,1) *  rand(1,1);
-    G = -1 + 2*rand(1,1);
-    [obj_stem_model, obj_stem_validation, EM_result] = model_estimate(dtraffic, X_beta, X_beta_name, ...
-                                                                               X_z, X_z_name, ...
-                                                                               X_p, X_p_name, ...
-                                                                               theta_p, sigma_eta, G, 2);
 
-    models_AIC.info(x,:) = [obj_stem_model.stem_EM_result.logL obj_stem_model.stem_EM_result.AIC sigma_eta G];
-    models_AIC.models{x} = obj_stem_model;
-end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                                kriging                                  %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+krig_lat = [40.771278; 40.771018; 40.771538];
+krig_lon = [-112.144589; -112.133259; -112.088627];
+krig.coordinates = [krig_lat(:) krig_lon(:)];
+
+% generate covariates data
+krig.covariates_data = ones(3, 8, size(dtraffic.Y{1},2));
+krig.covariates_names = {'weekend', 'holidays', 'mean temp', 'mean prec', 'interstate', 'US', 'RS', 'constant'};
+
+% obj_stem_krig_grid = stem_grid(krig.coordinates, 'deg', 'sparse', 'point', [], 'square', 0.5, 0.5);
+obj_stem_krig_grid = stem_grid(krig.coordinates, 'deg', 'sparse', 'point');
+obj_stem_krig_data = stem_krig_data(obj_stem_krig_grid, krig.covariates_data, krig.covariates_names);
+obj_stem_krig = stem_krig(obj_stem_model1, obj_stem_krig_data);
+
+obj_stem_krig_options = stem_krig_options();
+obj_stem_krig_result = obj_stem_krig.kriging(obj_stem_krig_options);
+obj_stem_krig_result{1}.plot(1)
+
+clear krig_lat krig_lon
 
 % location of stations 
 gs = geoscatter(dtraffic.latitude, dtraffic.longitude);
@@ -172,11 +196,9 @@ geolimits([40 41],[-112 -111.60])
 gs.MarkerFaceColor = [0, 0.270, 0.2410]
 
 
-% Kriging
-
-
 % CV validation attention at the cofficients used in order to estimate and
 % compare the model
+
 
 % residual analysis
 

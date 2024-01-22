@@ -5,7 +5,7 @@ close all
 addpath('../D-STEM/Src/');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%        Dimensions       %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                              Dimensions                                 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %   {q}     is a cell array of length q
@@ -42,7 +42,7 @@ addpath('../D-STEM/Src/');
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%      Data  building     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                            Data  building                               %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 load("data\utah_traffic.mat")
@@ -93,7 +93,7 @@ route_type(:,3) = utah_meta(:,7);
 traffic.route_type{1} = route_type;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%          Renaming       %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                               Renaming                                  %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 traffic.Y_name{1} = 'traffic';
@@ -121,7 +121,7 @@ clear X_beta ns T
 save('traffic.mat');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%      Operation on the Y     %%%%%%%%%%%%%%%%%%%%%%%%%
+%                           Operation on the Y                            %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Variables
@@ -239,4 +239,35 @@ title(['Seasoned/cleaned ',num2str(st),'rd station + diff autocorrelation'])
 
 clear traffic s_data ns T st freq_seasoned D12 traffic_season x D X_beta
 save('dtraffic.mat');
+% clear('dtraffic.mat')
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                                kriging                                  %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+krig_lat = [40.771278; 40.771018; 40.771538];
+krig_lon = [-112.144589; -112.133259; -112.088627];
+krig.coordinates = [krig_lat(:) krig_lon(:)];
+
+% generate covariates data
+krig.coordinates_data = zeros(3, 7, size(dtraffic.Y{1},2));
+krig.coordinates_name = dtraffic.X_beta_name;
+
+obj_stem_krig_grid = stem_grid(krig.coordinates, 'deg', 'sparse', 'point', [], 'square', 0.5, 0.5);
+obj_stem_krig_data = stem_krig_data(obj_stem_krig_grid, krig.covariates_data, krig_covariates.names,[]);
+obj_stem_krig = stem_krig(obj_stem_model,obj_stem_krig_data);
+
+obj_stem_krig_options = stem_krig_options();
+obj_stem_krig_options.block_size = 500;
+
+obj_stem_krig_result = obj_stem_krig.kriging(obj_stem_krig_options);
+obj_stem_krig_result{1}.plot(1)
+
+
+% location of stations 
+gs = geoscatter(dtraffic.latitude, dtraffic.longitude);
+geobasemap("topographic") 
+geolimits([40 41],[-112 -111.60]) 
+gs.MarkerFaceColor = [0, 0.270, 0.2410]
+
+kriging
