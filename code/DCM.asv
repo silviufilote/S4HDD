@@ -135,7 +135,7 @@ krig.covariates_data(:,10,:) = ones(4,size(dtraffic.Y{1},2));
 
 
 % obj_stem_krig_grid = stem_grid(krig.coordinates, 'deg', 'sparse', 'point', [], 'square', 0.5, 0.5);
-obj_stem_krig_grid = stem_grid(krig.coordinates, 'deg', 'regular', 'point', [2, 2], 'square', 0.5, 0.5);
+obj_stem_krig_grid = stem_grid(krig.coordinates, 'deg', 'regular', 'pixel', [2, 2], 'square', 0.5, 0.5);
 obj_stem_krig_data = stem_krig_data(obj_stem_krig_grid, krig.covariates_data, krig.covariates_names);
 obj_stem_krig = stem_krig(obj_stem_model1, obj_stem_krig_data);
 
@@ -164,6 +164,7 @@ residualsTest = visualize_res(obj_stem_model1, dtraffic);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                        Estimating model                                 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
 function [dtraffic, krig] = setup_traffic(traffic, krig, freq_seasoned, s_data_drop)
     
