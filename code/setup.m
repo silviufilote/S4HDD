@@ -176,160 +176,6 @@ clear traffic_on_full traffic_on x Y_mean
 
 save('traffic.mat');
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%                     Data cleaning and seasoned                          %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-% % PARAMETERS TO SET
-% seasonality = true;                                         % enable seasonality
-% d1 = true;                                                  % enable the Seasonal Differencing
-% nanTo = false;                                              % switch NaN into traffic to 0  
-% s_data = 0;                                                 % data initial drop 
-% freq_seasoned = 8*23;                                         % seasonality frequency
-% 
-% 
-% ns = size(traffic.Y{1}, 1);                                 % number of stations    
-% T = size(traffic.Y{1}, 2) - s_data;                         % number of time steps
-% s_data = s_data + 1;                                        % gli indici partono da 1 devo aggiungere + 1
-% 
-% if seasonality == true
-%     if d1 == true
-%         D1 = LagOp({1 -1},'Lags',[0,1]);                    % Differencing
-%         Dx = LagOp({1 -1},'Lags',[0, freq_seasoned]);       % lag operator seasonality
-%         D = D1 * Dx;                                        % total lag operator
-%         freq_seasoned = freq_seasoned + 1; 
-%     else
-%         D = LagOp({1 -1},'Lags',[0, freq_seasoned]);        % lag operator seasonality
-%     end
-% else
-%     D = LagOp({1 -1},'Lags',[0, 0]);
-%     freq_seasoned = 0;
-% end
-% 
-% 
-% if nanTo == true
-%     traffic.Y{1}(isnan(traffic.Y{1})) = 0;
-% end
-% 
-% 
-% traffic_season = ones(ns, T - freq_seasoned);
-% for x = 1:ns
-%     traffic_season(x,:) = filter(D, traffic.Y{1}(x,s_data:end));
-% end
-% 
-% 
-% dtraffic.Y{1} = traffic_season(:,:);
-% dtraffic.Y_name{1} = 'traffic';
-% dtraffic.weekend{1} = traffic.weekend{1}(s_data + freq_seasoned:end, 1);                                                       
-% dtraffic.holiday{1} = traffic.holiday{1}(s_data + freq_seasoned:end, 1);
-% dtraffic.mean_prec{1} = traffic.mean_prec{1}(s_data + freq_seasoned:end, 1); 
-% dtraffic.mean_temp{1} = traffic.mean_temp{1}(s_data + freq_seasoned:end, 1);
-% dtraffic.latitude = traffic.latitude;
-% dtraffic.longitude = traffic.longitude;
-% dtraffic.route = traffic.route;
-% dtraffic.station_id = traffic.station_id;
-% dtraffic.time_ini = datetime('01-01-2022 00:00:00','Format','dd-MM-yyyy HH:mm:ss') + hours(s_data - 1) + hours(freq_seasoned);
-% dtraffic.time_fin = datetime('31-01-2022 00:00:00','Format','dd-MM-yyyy HH:mm:ss') + hours(23) ;
-% 
-% 
-% dtraffic.dates = [datetime(dtraffic.time_ini):hours(1):datetime(dtraffic.time_fin)];
-% traffic_on_full = ones(1,size(dtraffic.Y{1},2));
-% for x = 1:size(dtraffic.Y{1},2)
-%     if(ismember(dtraffic.dates(x), traffic_on))
-%         traffic_on_full(1,x) = 1;
-%     else
-%         traffic_on_full(1,x) = 0;
-%     end
-% end
-% dtraffic.traffic_on{1} = traffic_on_full;
-% 
-% Y_mean_seas = zeros(1,size(dtraffic.Y{1},2));
-% for x = 1:size(dtraffic.Y{1},2)
-%     Y_mean_seas(1,x) = mean(dtraffic.Y{1}(:,x), "omitnan");
-% end
-% dtraffic.Y_mean{1} = Y_mean_seas;
-% 
-% 
-% % Creating X_beta
-% T = size(dtraffic.Y{1}, 2);
-% 
-% X_beta = zeros(ns, 8, T);
-% X_beta(:,1,:) = repelem(dtraffic.weekend{1}', ns, 1);
-% X_beta(:,2,:) = repelem(dtraffic.holiday{1}', ns, 1);
-% X_beta(:,3,:) = repelem(dtraffic.mean_temp{1}', ns, 1);
-% X_beta(:,4,:) = repelem(dtraffic.mean_prec{1}', ns, 1);
-% X_beta(:,5,:) = repelem(dtraffic.traffic_on{1}, ns, 1);
-% X_beta(:,6,:) = repelem(traffic.route_type{1}(:,1), 1, T);
-% X_beta(:,7,:) = repelem(traffic.route_type{1}(:,2), 1, T);
-% X_beta(:,8,:) = repelem(traffic.route_type{1}(:,3), 1, T);
-% 
-% dtraffic.X_beta{1} = X_beta;  
-% dtraffic.X_beta_name{1} = {'weekend', 'holidays', 'mean temp', 'mean prec', 'traffic on', 'interstate', 'US', 'RS'};
-% 
-% dtraffic.X_spa = traffic.route_type;
-% dtraffic.X_spa_name{1}  = {'interstate', 'US', 'RS'};
-% 
-% 
-% % Validation - clustering 
-% dtraffic.cluster_coordinates{1} = [3 8 9 10];
-% dtraffic.cluster_coordinates{2} = [11 18 19 20];
-% dtraffic.cluster_coordinates{3} = [21 12 2 14 5 22];
-% dtraffic.cluster_coordinates{4} = [6 13 23 24 25 15];
-% dtraffic.cluster_coordinates{5} = [4 7 16 26];
-% dtraffic.cluster_coordinates{6} = [27 28 29];
-% dtraffic.cluster_coordinates{7} = [31 30 33 32];
-% dtraffic.cluster_coordinates{8} = [34 36 35 37];
-% dtraffic.cluster_coordinates{9} = [39 38 40 42 41];
-% dtraffic.cluster_coordinates{10} = [44 43 45 46 47 48 49 50];
-% 
-% figure
-% tiledlayout(4,2)
-% 
-% nexttile
-% hold on
-% plot(traffic.dates, traffic.Y_mean{1});
-% title("Y mean traffic");
-% 
-% nexttile
-% hold on
-% autocorr(traffic.Y_mean{1})
-% title("autocorr Y mean traffic");
-% 
-% nexttile
-% hold on
-% plot(traffic.dates(1,2:end), diff(traffic.Y_mean{1}));
-% title("diff Y mean traffic");
-% 
-% nexttile
-% hold on
-% autocorr(diff(traffic.Y_mean{1}));
-% title("Autocorr diff Y mean traffic");
-% 
-% nexttile
-% hold on
-% plot(dtraffic.dates, dtraffic.Y_mean{1});
-% title("Seasonality Y mean traffic");
-% 
-% nexttile
-% hold on
-% autocorr(dtraffic.Y_mean{1});
-% title("Autocorr seasonality Y mean traffic");
-% 
-% nexttile
-% hold on
-% plot(dtraffic.dates(1,2:end), diff(dtraffic.Y_mean{1}));
-% title("Seasonality + diff Y mean traffic");
-% 
-% nexttile
-% hold on
-% autocorr(diff(dtraffic.Y_mean{1}));
-% title("Autocorr seasonality + diff Y mean traffic");
-% 
-% clear traffic s_data ns T st freq_seasoned D12 traffic_season x Dx D1
-% clear D X_beta Y_mean d1 seasonality nanTo traffic_on traffic_on_full Y_mean_seas
-% save('dtraffic.mat');
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                             Kriging                                     %
@@ -341,10 +187,16 @@ load("data\krig_prec.mat")
 load("data\krig_route.mat")
 load("data\krig_temp.mat")
 
-krig_lat = [40.771379; 40.544919; 40.383103; 40.108343];
-krig_lon = [-112.140558; -111.895082; -111.959112; -111.677759];
-krig.coordinates = [krig_lat(:) krig_lon(:)];
+krig_lat = [40:0.01:41];
+krig_lon = [-112.5:0.01:-111.5];
 
+% krig_lat = [40.771379; 40.544919; 40.383103; 40.108343];
+% krig_lon = [-112.140558; -111.895082; -111.959112; -111.677759];
+
+[LAT,LON] = meshgrid(krig_lat, krig_lon);
+krig.coordinates = [LAT(:) LON(:)];
+krig.lat = LAT;
+krig.lon = LON;
 
 mean_temp = zeros(1, size(krig_temp,2));
 mean_prec = zeros(1, size(krig_temp,2));
@@ -360,5 +212,6 @@ krig.route = krig_ruote;
 clear krig_lat krig_lon mean_prec mean_temp x
 clear krig_temp krig_ruote krig_prec
 
+clear LAT LON
 save("krig.mat")
 

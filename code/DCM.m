@@ -104,48 +104,110 @@ v = 1;
 %     models_AIC.models{x} = obj_stem_model;
 % end
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                                kriging                                  %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+krig.covariates_data{1} = ones(size(krig.coordinates,1), 10, size(dtraffic.Y{1},2));
+krig.covariates_names = {'weekend', 'holidays', 'mean temp', 'mean prec', 'traffic on', 'hours', 'interstate', 'US', 'RS', 'constant'};
+
+% krig.covariates_data = zeros(size(krig.coordinates,1), 10, size(dtraffic.Y{1},2));
+
+krig.prec_mean = repelem(krig.prec_mean, size(krig.coordinates,1), 1);
+krig.temp_mean = repelem(krig.temp_mean, size(krig.coordinates,1), 1);
+krig.interstate = repelem(krig.interstate, 1, T);
+krig.us = repelem(krig.route(:,2), 1, T);
+krig.rs = repelem(krig.route(:,3), 1, T);
+
+% krig.interstate = repelem(krig.interstate, 1, T);
+% krig.us = repelem(krig.route(:,2), 1, T);
+% krig.rs = repelem(krig.route(:,3), 1, T);
+
+
+
+% krig.covariates_data(:,1,:) = dtraffic.X_beta{1}(1:4,1,:);
+% krig.covariates_data(:,2,:) = dtraffic.X_beta{1}(1:4,2,:);
+% krig.covariates_data(:,3,:) = krig.temp_mean;
+% krig.covariates_data(:,4,:) = krig.prec_mean;
+% krig.covariates_data(:,5,:) = dtraffic.X_beta{1}(1:4,5,:);
+% krig.covariates_data(:,6,:) = dtraffic.X_beta{1}(1:4,6,:);
+% krig.covariates_data(:,7,:) = krig.interstate;
+% krig.covariates_data(:,8,:) = krig.us;
+% krig.covariates_data(:,9,:) = krig.rs;
+% krig.covariates_data(:,10,:) = ones(size(krig.coordinates,1),size(dtraffic.Y{1},2));
+
+% krig_lat = [40.771379; 40.544919; 40.383103; 40.108343];
+% krig_lon = [-112.140558; -111.895082; -111.959112; -111.677759];
+
+% krig_mask = NaN(size(krig.lat));
+% krig_mask(1,78)= 1;
+% krig_mask(78,1)= 1;
+% 
+% krig_mask(54,26)= 1;
+% krig_mask(26,54)= 1;
+% 
+% krig_mask(39,19)= 1;
+% krig_mask(19,39)= 1;
+% 
+% krig_mask(12,47)= 1;
+% krig_mask(47,12)= 1;
+
+krig_mask = ones(size(krig.lat));
+
+obj_stem_krig_grid = stem_grid(krig.coordinates, 'deg', 'regular', 'pixel', size(krig.lat), 'square', 1, 1);
+
+obj_stem_krig_data = stem_krig_data(obj_stem_krig_grid, krig.covariates_data{1}, krig.covariates_names, krig_mask);
+obj_stem_krig = stem_krig(obj_stem_model1, obj_stem_krig_data);
+
+obj_stem_krig_options = stem_krig_options();
+obj_stem_krig_options.block_size = 500;
+
+obj_stem_krig_result = obj_stem_krig.kriging(obj_stem_krig_options);
+
+obj_stem_krig_result{1}.plot(1)
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                                kriging                                  %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-figure
-gs2 = geoscatter(krig.coordinates(:,1),krig.coordinates(:,2) );
-geobasemap("topographic") 
-geolimits([40 41],[-112 -111.60]) 
-gs2.MarkerFaceColor = [1 0 1];
-title("Cluster selection")
-
-% generate covariates data
-krig.covariates_data{1} = zeros(4, 10, size(dtraffic.Y{1},2));
-krig.covariates_names = {'weekend', 'holidays', 'mean temp', 'mean prec', 'traffic on', 'hours', 'interstate', 'US', 'RS', 'constant'};
-
-% Beta krip enrichment
-krig.covariates_data = zeros(4, 10, size(dtraffic.Y{1},2));
-krig.covariates_data(:,1,:) = dtraffic.X_beta{1}(1:4,1,:);
-krig.covariates_data(:,2,:) = dtraffic.X_beta{1}(1:4,2,:);
-krig.covariates_data(:,3,:) = krig.temp_mean;
-krig.covariates_data(:,4,:) = krig.prec_mean;
-krig.covariates_data(:,5,:) = dtraffic.X_beta{1}(1:4,5,:);
-krig.covariates_data(:,6,:) = dtraffic.X_beta{1}(1:4,6,:);
-krig.covariates_data(:,7,:) = krig.interstate;
-krig.covariates_data(:,8,:) = krig.us;
-krig.covariates_data(:,9,:) = krig.rs;
-krig.covariates_data(:,10,:) = ones(4,size(dtraffic.Y{1},2));
-
-
-% obj_stem_krig_grid = stem_grid(krig.coordinates, 'deg', 'sparse', 'point', [], 'square', 0.5, 0.5);
-obj_stem_krig_grid = stem_grid(krig.coordinates, 'deg', 'regular', 'point', [2, 2], 'square', 0.5, 0.5);
-obj_stem_krig_data = stem_krig_data(obj_stem_krig_grid, krig.covariates_data, krig.covariates_names);
-obj_stem_krig = stem_krig(obj_stem_model1, obj_stem_krig_data);
-
-obj_stem_krig_options = stem_krig_options();
-obj_stem_krig_result = obj_stem_krig.kriging(obj_stem_krig_options);
-
-figure
-obj_stem_krig_result{1}.plot(1)
-
-clear krig_lat krig_lon
+% figure
+% gs2 = geoscatter(krig.coordinates(:,1),krig.coordinates(:,2) );
+% geobasemap("topographic") 
+% geolimits([40 41],[-112 -111.60]) 
+% gs2.MarkerFaceColor = [1 0 1];
+% title("Cluster selection")
+% 
+% % generate covariates data
+% krig.covariates_data{1} = zeros(4, 10, size(dtraffic.Y{1},2));
+% krig.covariates_names = {'weekend', 'holidays', 'mean temp', 'mean prec', 'traffic on', 'hours', 'interstate', 'US', 'RS', 'constant'};
+% 
+% % Beta krip enrichment
+% krig.covariates_data = zeros(4, 10, size(dtraffic.Y{1},2));
+% krig.covariates_data(:,1,:) = dtraffic.X_beta{1}(1:4,1,:);
+% krig.covariates_data(:,2,:) = dtraffic.X_beta{1}(1:4,2,:);
+% krig.covariates_data(:,3,:) = krig.temp_mean;
+% krig.covariates_data(:,4,:) = krig.prec_mean;
+% krig.covariates_data(:,5,:) = dtraffic.X_beta{1}(1:4,5,:);
+% krig.covariates_data(:,6,:) = dtraffic.X_beta{1}(1:4,6,:);
+% krig.covariates_data(:,7,:) = krig.interstate;
+% krig.covariates_data(:,8,:) = krig.us;
+% krig.covariates_data(:,9,:) = krig.rs;
+% krig.covariates_data(:,10,:) = ones(4,size(dtraffic.Y{1},2));
+% 
+% 
+% % obj_stem_krig_grid = stem_grid(krig.coordinates, 'deg', 'sparse', 'point', [], 'square', 0.5, 0.5);
+% obj_stem_krig_grid = stem_grid(krig.coordinates, 'deg', 'regular', 'point', [2, 2], 'square', 0.5, 0.5);
+% obj_stem_krig_data = stem_krig_data(obj_stem_krig_grid, krig.covariates_data, krig.covariates_names);
+% obj_stem_krig = stem_krig(obj_stem_model1, obj_stem_krig_data);
+% 
+% obj_stem_krig_options = stem_krig_options();
+% obj_stem_krig_result = obj_stem_krig.kriging(obj_stem_krig_options);
+% 
+% figure
+% obj_stem_krig_result{1}.plot(1)
+% 
+% clear krig_lat krig_lon
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                          Statistics                                     %
@@ -266,11 +328,11 @@ function [dtraffic, krig] = setup_traffic(traffic, krig, freq_seasoned, s_data_d
 
 
     % Kriging covariates
-    krig.prec_mean = repelem(krig.prec_mean(1, s_data + freq_seasoned:end), size(krig.coordinates,1), 1);
-    krig.temp_mean = repelem(krig.temp_mean(1, s_data + freq_seasoned:end), size(krig.coordinates,1), 1);
-    krig.interstate = repelem(krig.route(:,1), 1, T);
-    krig.us = repelem(krig.route(:,2), 1, T);
-    krig.rs = repelem(krig.route(:,3), 1, T);
+    krig.prec_mean = krig.prec_mean(1, s_data + freq_seasoned:end);
+    krig.temp_mean = krig.temp_mean(1, s_data + freq_seasoned:end);
+    krig.interstate = krig.route(:,1);
+    krig.us = krig.route(:,2);
+    krig.rs = krig.route(:,3);
     
     
     % Validation - clustering 
@@ -332,6 +394,7 @@ function [dtraffic, krig] = setup_traffic(traffic, krig, freq_seasoned, s_data_d
     % clear D X_beta Y_mean d1 seasonality nanTo traffic_on traffic_on_full Y_mean_seas
     save('dtraffic.mat');
 end
+
 
 function [dtraffic, obj_stem_model, obj_stem_validation, EM_result] = model_estimate(dtraffic, X_beta, X_beta_name, X_z, X_z_name, X_p, X_p_name, theta_p, v, sigma_eta, G, nIterations)
     
