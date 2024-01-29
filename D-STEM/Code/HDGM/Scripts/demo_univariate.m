@@ -70,12 +70,11 @@ obj_stem_par.sigma_eps = 0.3;
 obj_stem_model.set_initial_values(obj_stem_par);
 
 %Model estimation
-exit_toll = 0.001;
-max_iterations = 200;
-obj_stem_EM_options = stem_EM_options(exit_toll, max_iterations);
+obj_stem_EM_options = stem_EM_options();
+obj_stem_EM_options.max_iterations = 2;
 obj_stem_model.EM_estimate(obj_stem_EM_options);
 obj_stem_model.set_varcov;
 obj_stem_model.set_logL;
 
-obj_stem_model.print
-obj_stem_model.plot_val
+obj_stem_model.print()
+obj_stem_model.plot_validation()

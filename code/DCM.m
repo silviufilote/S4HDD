@@ -11,64 +11,72 @@ load("krig.mat");
 %                          Optimization log likelihood                    %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-[dtraffic, krig] = setup_traffic(traffic, krig, 24, 0);
-clear traffic
+% [dtraffic, krig] = setup_traffic(traffic, krig, 24, 0);
+% clear traffic
 
-% for x = 1:24
-% 
-%     ns = size(dtraffic.Y{1}, 1);                         % number of stations    
-% 
-%     % Process 1
-%     X_beta = dtraffic.X_beta{1};
-%     X_beta_name = dtraffic.X_beta_name{1};
-%     X_z = ones(ns, 1);
-%     X_z_name = {'constant'};
-%     X_p = dtraffic.X_spa{1};
-%     X_p_name = dtraffic.X_spa_name{1};
-%     theta_p = [10 10 10];
-%     sigma_eta = 0.2;
-%     G = 0.8;
-%     v = ones(1,1,3);
-% 
-%     [dtraffic, obj_stem_model, obj_stem_validation, EM_result] = model_estimate(dtraffic, X_beta, X_beta_name, ...
-%                                                                                    X_z, X_z_name, ...
-%                                                                                    X_p, X_p_name, ...
-%                                                                                    theta_p, v, sigma_eta, G, 10);
-% 
-%     print_models(1,x) = obj_stem_model;
-% end
-% 
-% 
-% for x = 1:24
-%     print(print_models(x));
-% end
+for x = 1:24
+
+    [dtraffic, krig] = setup_traffic(traffic, krig, x, 0);
+
+    ns = size(dtraffic.Y{1}, 1);                         % number of stations    
+
+    % Process 1
+    X_beta = dtraffic.X_beta{1};
+    X_beta_name = dtraffic.X_beta_name{1};
+    % X_z = ones(ns, 1);
+    % X_z_name = {'constant'};
+    % X_z = [dtraffic.X_spa{1}(:,1) dtraffic.X_spa{1}(:,3)];
+    % X_z_name = [dtraffic.X_spa_name{1}(:,1) dtraffic.X_spa_name{1}(:,3)];
+    X_z = dtraffic.X_spa{1};
+    X_z_name = dtraffic.X_spa_name{1};
+    X_p = ones(ns, 1);
+    X_p_name = {'constant'};
+    theta_p = 0.01;
+    sigma_eta = diag([0.2 0.2 0.2]);
+    G = diag([0.8 0.8 0.8]);
+    v = 1;
+    
+    [dtraffic, obj_stem_model1, obj_stem_validation, EM_result] = model_estimate(dtraffic, X_beta, X_beta_name, ...
+                                                                                   X_z, X_z_name, ...
+                                                                                   X_p, X_p_name, ...
+                                                                                   theta_p, v, sigma_eta, G, 20);
+
+    print_models(1,x) = obj_stem_model1;
+end
+
+
+for x = 1:24
+    print(print_models(x));
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                          Building model                                 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-ns = size(dtraffic.Y{1}, 1);                         % number of stations    
-T = size(dtraffic.Y{1}, 2);                          % number of time steps
-
-% Process 1
-X_beta = dtraffic.X_beta{1};
-X_beta_name = dtraffic.X_beta_name{1};
-% X_z = ones(ns, 1);
-% X_z_name = {'constant'};
-X_z = dtraffic.X_spa{1};
-X_z_name = dtraffic.X_spa_name{1};
-X_p = ones(ns, 1);
-X_p_name = {'constant'};
-theta_p = 1;
-sigma_eta = diag([0.2 0.2 0.2]);
-G = diag([0.8 0.8 0.8]);
-v = 1;
-
-[dtraffic, obj_stem_model1, obj_stem_validation1, EM_result1] = model_estimate(dtraffic, X_beta, X_beta_name, ...
-                                                                               X_z, X_z_name, ...
-                                                                               X_p, X_p_name, ...
-                                                                               theta_p, v, sigma_eta, G, 1);
+% ns = size(dtraffic.Y{1}, 1);                         % number of stations    
+% T = size(dtraffic.Y{1}, 2);                          % number of time steps
+% 
+% % Process 1
+% X_beta = dtraffic.X_beta{1};
+% X_beta_name = dtraffic.X_beta_name{1};
+% % X_z = ones(ns, 1);
+% % X_z_name = {'constant'};
+% % X_z = [dtraffic.X_spa{1}(:,1) dtraffic.X_spa{1}(:,3)];
+% % X_z_name = [dtraffic.X_spa_name{1}(:,1) dtraffic.X_spa_name{1}(:,3)];
+% X_z = dtraffic.X_spa{1};
+% X_z_name = dtraffic.X_spa_name{1};
+% X_p = ones(ns, 1);
+% X_p_name = {'constant'};
+% theta_p = 0.01;
+% sigma_eta = diag([0.2 0.2 0.2]);
+% G = diag([0.8 0.8 0.8]);
+% v = 1;
+% 
+% [dtraffic, obj_stem_model1, obj_stem_validation1, EM_result1] = model_estimate(dtraffic, X_beta, X_beta_name, ...
+%                                                                                X_z, X_z_name, ...
+%                                                                                X_p, X_p_name, ...
+%                                                                                theta_p, v, sigma_eta, G, 100);
 
 
 
@@ -76,7 +84,6 @@ v = 1;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                           Verify convergence EM                         %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 
 % X_beta = ones(ns,4,T);
 % X_beta(:,1,:) = dtraffic.X_beta{1}(:,1,:); 
@@ -115,44 +122,36 @@ krig.covariates_names = {'weekend', 'holidays', 'mean temp', 'mean prec', 'traff
 
 krig.prec_mean = repelem(krig.prec_mean, size(krig.coordinates,1), 1);
 krig.temp_mean = repelem(krig.temp_mean, size(krig.coordinates,1), 1);
-krig.interstate = repelem(krig.interstate, 1, T);
-krig.us = repelem(krig.route(:,2), 1, T);
-krig.rs = repelem(krig.route(:,3), 1, T);
+krig.interstate = zeros(size(krig.coordinates,1), size(dtraffic.Y{1},2));
+krig.interstate(1195,:) = ones(1,size(dtraffic.Y{1},2));
+krig.interstate(5516,:) = ones(1,size(dtraffic.Y{1},2));
+krig.interstate(7814,:) = ones(1,size(dtraffic.Y{1},2));
+krig.us = zeros(size(krig.coordinates,1), size(dtraffic.Y{1},2));
+krig.rs = zeros(size(krig.coordinates,1), size(dtraffic.Y{1},2));
+krig.rs(3893,:) = ones(1,size(dtraffic.Y{1},2));
 
-% krig.interstate = repelem(krig.interstate, 1, T);
-% krig.us = repelem(krig.route(:,2), 1, T);
-% krig.rs = repelem(krig.route(:,3), 1, T);
 
+krig.covariates_data{1}(:,1,:) = repelem(dtraffic.X_beta{1}(1,1,:), size(krig.coordinates,1), 1);
+krig.covariates_data{1}(:,2,:) = repelem(dtraffic.X_beta{1}(1,2,:), size(krig.coordinates,1), 1);
+krig.covariates_data{1}(:,3,:) = krig.temp_mean;
+krig.covariates_data{1}(:,4,:) = krig.prec_mean;
+krig.covariates_data{1}(:,5,:) = repelem(dtraffic.X_beta{1}(1,5,:), size(krig.coordinates,1), 1);
+krig.covariates_data{1}(:,6,:) = repelem(dtraffic.X_beta{1}(1,6,:), size(krig.coordinates,1), 1);
+krig.covariates_data{1}(:,7,:) = krig.interstate;
+krig.covariates_data{1}(:,8,:) = krig.us;
+krig.covariates_data{1}(:,9,:) = krig.rs;
+krig.covariates_data{1}(:,10,:) = ones(size(krig.coordinates,1), size(dtraffic.Y{1},2));
 
+krig.lat_stations = [40.771379; 40.544919; 40.383103; 40.108343];
+krig.lon_stations = [-112.140558; -111.895082; -111.959112; -111.677759];
 
-% krig.covariates_data(:,1,:) = dtraffic.X_beta{1}(1:4,1,:);
-% krig.covariates_data(:,2,:) = dtraffic.X_beta{1}(1:4,2,:);
-% krig.covariates_data(:,3,:) = krig.temp_mean;
-% krig.covariates_data(:,4,:) = krig.prec_mean;
-% krig.covariates_data(:,5,:) = dtraffic.X_beta{1}(1:4,5,:);
-% krig.covariates_data(:,6,:) = dtraffic.X_beta{1}(1:4,6,:);
-% krig.covariates_data(:,7,:) = krig.interstate;
-% krig.covariates_data(:,8,:) = krig.us;
-% krig.covariates_data(:,9,:) = krig.rs;
-% krig.covariates_data(:,10,:) = ones(size(krig.coordinates,1),size(dtraffic.Y{1},2));
+krig_mask = NaN(size(krig.lat));
+krig_mask(37, 78)= 1;
+krig_mask(62,55)= 1;
+krig_mask(55,39)= 1;
+krig_mask(83,12)= 1;
 
-% krig_lat = [40.771379; 40.544919; 40.383103; 40.108343];
-% krig_lon = [-112.140558; -111.895082; -111.959112; -111.677759];
-
-% krig_mask = NaN(size(krig.lat));
-% krig_mask(1,78)= 1;
-% krig_mask(78,1)= 1;
-% 
-% krig_mask(54,26)= 1;
-% krig_mask(26,54)= 1;
-% 
-% krig_mask(39,19)= 1;
-% krig_mask(19,39)= 1;
-% 
-% krig_mask(12,47)= 1;
-% krig_mask(47,12)= 1;
-
-krig_mask = ones(size(krig.lat));
+% krig_mask = ones(size(krig.lat));
 
 obj_stem_krig_grid = stem_grid(krig.coordinates, 'deg', 'regular', 'pixel', size(krig.lat), 'square', 1, 1);
 
@@ -164,7 +163,66 @@ obj_stem_krig_options.block_size = 500;
 
 obj_stem_krig_result = obj_stem_krig.kriging(obj_stem_krig_options);
 
+
+% Mean the kriging result
+krig.yhat_spa = zeros(size(krig.lat_stations));
+krig.yhat_spa(1) = mean(obj_stem_krig_result{1}.y_hat(37, 78, :));
+krig.yhat_spa(2) = mean(obj_stem_krig_result{1}.y_hat(62, 55, :));
+krig.yhat_spa(3) = mean(obj_stem_krig_result{1}.y_hat(55, 39, :));
+krig.yhat_spa(4) = mean(obj_stem_krig_result{1}.y_hat(83, 12, :));
+
+krig.yhat_std = zeros(size(krig.lat_stations));
+krig.yhat_std(1) = sqrt(mean(obj_stem_krig_result{1}.diag_Var_y_hat(37, 78, :)));
+krig.yhat_std(2) = sqrt(mean(obj_stem_krig_result{1}.diag_Var_y_hat(62, 55, :)));
+krig.yhat_std(3) = sqrt(mean(obj_stem_krig_result{1}.diag_Var_y_hat(55, 39, :)));
+krig.yhat_std(4) = sqrt(mean(obj_stem_krig_result{1}.diag_Var_y_hat(83, 12, :)));
+
+
+figure
 obj_stem_krig_result{1}.plot(1)
+
+figure
+tiledlayout(1,3)
+nexttile
+gs1 = geoscatter(dtraffic.latitude, dtraffic.longitude, "filled");
+geobasemap("topographic") 
+geolimits([40 41],[-112.30 -111.10])
+% geobasemap streets
+gs1.Marker = "*";
+gs1.MarkerFaceColor = [0 0 0];
+gs1.MarkerEdgeColor = [0 0 0];
+title("All stations")
+hold on
+gs2 = geoscatter(krig.lat_stations, krig.lon_stations, "filled");
+gs2.MarkerFaceColor = [1 0 0];
+
+nexttile
+gs3 = geoscatter(dtraffic.latitude, dtraffic.longitude, "filled");
+geobasemap("topographic") 
+geolimits([40 41],[-112.30 -111.30])
+gs3.Marker = "*";
+gs3.MarkerFaceColor = [0 0 0];
+gs3.MarkerEdgeColor = [0 0 0];
+title("All stations")
+hold on
+gs4 = geoscatter(krig.lat_stations, krig.lon_stations, 50, krig.yhat_spa, "filled");
+colormap autumn; % Choose your desired colormap
+c = colorbar;
+c.Label.String = "mean yhat spatial"; % Label for the colorbar
+
+nexttile
+gs3 = geoscatter(dtraffic.latitude, dtraffic.longitude, "filled");
+geobasemap("topographic") 
+geolimits([40 41],[-112.30 -111.30])
+gs3.Marker = "*";
+gs3.MarkerFaceColor = [0 0 0];
+gs3.MarkerEdgeColor = [0 0 0];
+title("All stations")
+hold on
+gs5 = geoscatter(krig.lat_stations, krig.lon_stations, 50, krig.yhat_std, "filled");
+colormap autumn; % Choose your desired colormap
+c = colorbar;
+c.Label.String = "std mean yhat spatial"; % Label for the colorbar
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -209,6 +267,7 @@ obj_stem_krig_result{1}.plot(1)
 % 
 % clear krig_lat krig_lon
 
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                          Statistics                                     %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -231,12 +290,12 @@ function [dtraffic, krig] = setup_traffic(traffic, krig, freq_seasoned, s_data_d
     
     % PARAMETERS TO SET
     if(freq_seasoned > 0)
-        seasonality = false;                                        % enable seasonality        
+        seasonality = true;                                         % enable seasonality        
     else
-        seasonality = true;                                         % enable seasonality
+        seasonality = false;                                        % disable seasonality
     end
 
-    d1 = true;                                                      % enable the Seasonal Differencing
+    d1 = false;                                                     % enable the Seasonal Differencing
     s_data = s_data_drop;                                           % data initial drop 
     nanTo = false;                                                  % switch NaN into traffic to 0  
     
@@ -395,7 +454,6 @@ function [dtraffic, krig] = setup_traffic(traffic, krig, freq_seasoned, s_data_d
     save('dtraffic.mat');
 end
 
-
 function [dtraffic, obj_stem_model, obj_stem_validation, EM_result] = model_estimate(dtraffic, X_beta, X_beta_name, X_z, X_z_name, X_p, X_p_name, theta_p, v, sigma_eta, G, nIterations)
     
     ns = size(dtraffic.Y{1}, 1);                         % number of stations    
@@ -472,6 +530,9 @@ function [dtraffic, obj_stem_model, obj_stem_validation, EM_result] = model_esti
     obj_stem_model.EM_estimate(obj_stem_EM_options);
     obj_stem_model.set_varcov;
     obj_stem_model.set_logL;
+
+    obj_stem_model.print()
+    obj_stem_model.print_par()
     
     % Result of the EM estimation
     EM_result = obj_stem_model.stem_EM_result;
@@ -498,6 +559,8 @@ function [dtraffic, obj_stem_model, obj_stem_validation, EM_result] = model_esti
     geobasemap("topographic") 
     geolimits([40 41],[-112 -111.60]) 
     gs2.MarkerFaceColor = [1 0 0];
+
+    
     title("Cluster selection")
 end
 

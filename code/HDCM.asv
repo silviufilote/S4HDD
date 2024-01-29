@@ -27,11 +27,9 @@ X_beta = dtraffic.X_beta{1};
 X_beta_name = dtraffic.X_beta_name{1};
 X_z = ones(ns, 1);
 X_z_name = {'constant'};
-% X_z = dtraffic.X_spa{1}(:,2);
-% X_z_name = dtraffic.X_spa_name{1}(1,2);
-% X_z = dtraffic.X_beta{1}(:,5,:);
-% X_z_name = dtraffic.X_beta_name{1}(1,5);
-theta_z = 0.01;
+% X_z = dtraffic.X_spa{1};
+% X_z_name = dtraffic.X_spa_name{1};
+theta_z = 0.001;
 v_z = 1;
 sigma_eta = 0.2;
 G = 0.8;
@@ -109,31 +107,24 @@ krig.covariates_data{1}(:,10,:) = ones(size(krig.coordinates,1), size(dtraffic.Y
 % krig_lon = [-112.140558; -111.895082; -111.959112; -111.677759];
 
 
-% krig_mask = NaN(size(krig.lat,1), size(krig.lat,1),size(dtraffic.Y{1},1));
-% for x = 1:size(dtraffic.Y{1},1)
-%     krig_mask(37,78,x)= 1;
-%     krig_mask(62,55,x)= 1;
-%     krig_mask(55,39,x)= 1;
-%     krig_mask(83,12,x)= 1;
-% end
 
-krig_mask = NaN(size(krig.lat,1), size(krig.lat,1));
-krig_mask(37, 78)= 1;
-krig_mask(62,55)= 1;
-krig_mask(55,39)= 1;
-krig_mask(83,12)= 1;
+krig_mask = NaN(size(krig.lat,1),size(dtraffic.Y{1},1), size(krig.lat,1), );
+for x = 1:size(dtraffic.Y{1},2)
+    krig_mask(37,78,x)= 1;
+    krig_mask(62,55,x)= 1;
+    krig_mask(55,39,x)= 1;
+    krig_mask(83,12,x)= 1;
+end
+
 
 obj_stem_krig_grid = stem_grid(krig.coordinates, 'deg', 'regular', 'pixel', size(krig.lat), 'square', 1, 1);
 obj_stem_krig_data = stem_krig_data(obj_stem_krig_grid, krig.covariates_data{1}, krig.covariates_names, krig_mask);
 obj_stem_krig = stem_krig(obj_stem_model1, obj_stem_krig_data);
 obj_stem_krig_options = stem_krig_options();
-obj_stem_krig_options.block_size = 200;
+obj_stem_krig_options.block_size = 100;
 obj_stem_krig_result = obj_stem_krig.kriging(obj_stem_krig_options);
 
 figure
-
-plot
-
 x = obj_stem_krig_result{1}.plot(3)
 MarkerFaceColor = [1 0 1];
 x.CData = [0 0 0];
