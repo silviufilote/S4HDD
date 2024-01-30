@@ -11,7 +11,7 @@ load("krig.mat");
 %                          Building setup                                 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-[dtraffic, krig] = setup_traffic(traffic, krig, 24, 0);
+[dtraffic, krig] = setup_traffic(traffic, krig, 1, 0);
 clear traffic
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -166,7 +166,7 @@ function [dtraffic, krig] = setup_traffic(traffic, krig, freq_seasoned, s_data_d
         seasonality = true;                                         % enable seasonality
     end
 
-    d1 = true;                                                      % enable the Seasonal Differencing
+    d1 = false;                                                      % enable the Seasonal Differencing
     s_data = s_data_drop;                                           % data initial drop 
     nanTo = false;                                                  % switch NaN into traffic to 0  
     

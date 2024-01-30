@@ -1,6 +1,7 @@
 clc
 clearvars
 close all
+rng("default")
 
 addpath('../D-STEM/');
 addpath('../D-STEM/Src/');
@@ -11,72 +12,75 @@ load("krig.mat");
 %                          Optimization log likelihood                    %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% [dtraffic, krig] = setup_traffic(traffic, krig, 24, 0);
-% clear traffic
+[dtraffic, krig] = setup_traffic(traffic, krig, 0, 0);
+clear traffic
 
-for x = 1:24
-
-    [dtraffic, krig] = setup_traffic(traffic, krig, x, 0);
-
-    ns = size(dtraffic.Y{1}, 1);                         % number of stations    
-
-    % Process 1
-    X_beta = dtraffic.X_beta{1};
-    X_beta_name = dtraffic.X_beta_name{1};
-    % X_z = ones(ns, 1);
-    % X_z_name = {'constant'};
-    % X_z = [dtraffic.X_spa{1}(:,1) dtraffic.X_spa{1}(:,3)];
-    % X_z_name = [dtraffic.X_spa_name{1}(:,1) dtraffic.X_spa_name{1}(:,3)];
-    X_z = dtraffic.X_spa{1};
-    X_z_name = dtraffic.X_spa_name{1};
-    X_p = ones(ns, 1);
-    X_p_name = {'constant'};
-    theta_p = 0.01;
-    sigma_eta = diag([0.2 0.2 0.2]);
-    G = diag([0.8 0.8 0.8]);
-    v = 1;
-    
-    [dtraffic, obj_stem_model1, obj_stem_validation, EM_result] = model_estimate(dtraffic, X_beta, X_beta_name, ...
-                                                                                   X_z, X_z_name, ...
-                                                                                   X_p, X_p_name, ...
-                                                                                   theta_p, v, sigma_eta, G, 20);
-
-    print_models(1,x) = obj_stem_model1;
-end
-
-
-for x = 1:24
-    print(print_models(x));
-end
+% for x = 1:24
+% 
+%     [dtraffic, krig] = setup_traffic(traffic, krig, x, 0);
+% 
+%     ns = size(dtraffic.Y{1}, 1);                         % number of stations    
+% 
+%     % Process 1
+%     X_beta = dtraffic.X_beta{1};
+%     X_beta_name = dtraffic.X_beta_name{1};
+%     % X_z = ones(ns, 1);
+%     % X_z_name = {'constant'};
+%     % X_z = [dtraffic.X_spa{1}(:,1) dtraffic.X_spa{1}(:,3)];
+%     % X_z_name = [dtraffic.X_spa_name{1}(:,1) dtraffic.X_spa_name{1}(:,3)];
+%     X_z = dtraffic.X_spa{1};
+%     X_z_name = dtraffic.X_spa_name{1};
+%     X_p = ones(ns, 1);
+%     X_p_name = {'constant'};
+%     theta_p = 0.01;
+%     sigma_eta = diag([0.2 0.2 0.2]);
+%     G = diag([0.8 0.8 0.8]);
+%     v = 1;
+% 
+%     [dtraffic, obj_stem_model1, obj_stem_validation, EM_result] = model_estimate(dtraffic, X_beta, X_beta_name, ...
+%                                                                                    X_z, X_z_name, ...
+%                                                                                    X_p, X_p_name, ...
+%                                                                                    theta_p, v, sigma_eta, G, 10);
+% 
+%     print_models(1,x) = obj_stem_model1;
+%     visualize_res(print_models(1,x), dtraffic)
+% end
+% 
+% 
+% for x = 1:24
+%     print(print_models(x));
+% end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                          Building model                                 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-% ns = size(dtraffic.Y{1}, 1);                         % number of stations    
-% T = size(dtraffic.Y{1}, 2);                          % number of time steps
-% 
-% % Process 1
+ns = size(dtraffic.Y{1}, 1);                         % number of stations    
+T = size(dtraffic.Y{1}, 2);                          % number of time steps
+
+% Process 1
 % X_beta = dtraffic.X_beta{1};
 % X_beta_name = dtraffic.X_beta_name{1};
-% % X_z = ones(ns, 1);
-% % X_z_name = {'constant'};
-% % X_z = [dtraffic.X_spa{1}(:,1) dtraffic.X_spa{1}(:,3)];
-% % X_z_name = [dtraffic.X_spa_name{1}(:,1) dtraffic.X_spa_name{1}(:,3)];
-% X_z = dtraffic.X_spa{1};
-% X_z_name = dtraffic.X_spa_name{1};
-% X_p = ones(ns, 1);
-% X_p_name = {'constant'};
-% theta_p = 0.01;
-% sigma_eta = diag([0.2 0.2 0.2]);
-% G = diag([0.8 0.8 0.8]);
-% v = 1;
-% 
-% [dtraffic, obj_stem_model1, obj_stem_validation1, EM_result1] = model_estimate(dtraffic, X_beta, X_beta_name, ...
-%                                                                                X_z, X_z_name, ...
-%                                                                                X_p, X_p_name, ...
-%                                                                                theta_p, v, sigma_eta, G, 100);
+X_beta = [dtraffic.X_beta{1}(:,1:2,:)  dtraffic.X_beta{1}(:,5:9,:)];
+X_beta_name = [dtraffic.X_beta_name{1}(1,1:2)  dtraffic.X_beta_name{1}(1,5:9)];
+% X_z = ones(ns, 1);
+% X_z_name = {'constant'};
+% X_z = [dtraffic.X_spa{1}(:,1) dtraffic.X_spa{1}(:,3)];
+% X_z_name = [dtraffic.X_spa_name{1}(:,1) dtraffic.X_spa_name{1}(:,3)];
+X_z =  dtraffic.X_spa{1};
+X_z_name = dtraffic.X_spa_name{1};
+X_p = dtraffic.X_spa{1}(:,1);
+X_p_name = dtraffic.X_spa_name{1}(:,1);
+theta_p = 0.01;
+sigma_eta = diag([0.2 0.2 0.2]);
+G = diag([0.8 0.8 0.8]);
+v = 1;
+
+[dtraffic, obj_stem_model1, obj_stem_validation1, EM_result1] = model_estimate(dtraffic, X_beta, X_beta_name, ...
+                                                                               X_z, X_z_name, ...
+                                                                               X_p, X_p_name, ...
+                                                                               theta_p, v, sigma_eta, G, 100);
 
 
 
@@ -178,8 +182,8 @@ krig.yhat_std(3) = sqrt(mean(obj_stem_krig_result{1}.diag_Var_y_hat(55, 39, :)))
 krig.yhat_std(4) = sqrt(mean(obj_stem_krig_result{1}.diag_Var_y_hat(83, 12, :)));
 
 
-figure
-obj_stem_krig_result{1}.plot(1)
+% figure
+% obj_stem_krig_result{1}.plot(1)
 
 figure
 tiledlayout(1,3)
@@ -295,7 +299,7 @@ function [dtraffic, krig] = setup_traffic(traffic, krig, freq_seasoned, s_data_d
         seasonality = false;                                        % disable seasonality
     end
 
-    d1 = false;                                                     % enable the Seasonal Differencing
+    d1 = false;                                                      % enable the Seasonal Differencing
     s_data = s_data_drop;                                           % data initial drop 
     nanTo = false;                                                  % switch NaN into traffic to 0  
     
@@ -575,21 +579,19 @@ function visualize_info(obj_stem_model, dtraffic)
     tiledlayout(3,2)
     nexttile
     plot(obj_stem_model.stem_EM_result.R2)
-    ylim([-1.1, 1.1]);
-    title("R2 training")
+    title("R2 training - spatial")
     
     nexttile
     plot(obj_stem_model.stem_validation_result{1}.cv_R2_s)
-    ylim([-1.1, 1.1]);
-    title("R2 validation - ns")
+    title("R2 validation - spatial")
     
     nexttile
     plot(dtraffic.dates, sqrt(obj_stem_model.stem_validation_result{1}.cv_mse_t))
-    title("CV RMSE - ts")
+    title("CV RMSE - temporal")
     
     nexttile
     plot(sqrt(obj_stem_model.stem_validation_result{1}.cv_mse_s))
-    title("CV RMSE - ns")
+    title("CV RMSE - spatial")
     
     nexttile
     plot(dtraffic.dates, dtraffic.Y_mean{1})
@@ -597,7 +599,7 @@ function visualize_info(obj_stem_model, dtraffic)
     
     nexttile
     plot(dtraffic.dates, dtraffic.Y_mean_trans{1})
-    title("Mean traffic log")
+    title("Mean traffic standardize")
 end
 
 function [residualsTest] = visualize_res(obj_stem_model, dtraffic, residualsTest)
