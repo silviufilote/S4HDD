@@ -1,7 +1,7 @@
 clc
 clearvars
 close all
-rng("default")
+rng(2)
 
 addpath('../D-STEM/');
 addpath('../D-STEM/Src/');
@@ -9,7 +9,7 @@ load("traffic.mat");
 load("krig.mat");
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%                          Optimization log likelihood                    %
+%                          Optimization statistics                        %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 [dtraffic, krig] = setup_traffic(traffic, krig, 0, 0);
@@ -60,59 +60,62 @@ ns = size(dtraffic.Y{1}, 1);                         % number of stations
 T = size(dtraffic.Y{1}, 2);                          % number of time steps
 
 % Process 1
-% X_beta = dtraffic.X_beta{1};
-% X_beta_name = dtraffic.X_beta_name{1};
-X_beta = [dtraffic.X_beta{1}(:,1:2,:)  dtraffic.X_beta{1}(:,5:9,:)];
-X_beta_name = [dtraffic.X_beta_name{1}(1,1:2)  dtraffic.X_beta_name{1}(1,5:9)];
+X_beta = dtraffic.X_beta{1};
+X_beta_name = dtraffic.X_beta_name{1};
+% X_beta = [dtraffic.X_beta{1}(:,1:2,:)  dtraffic.X_beta{1}(:,5:9,:)];
+% X_beta_name = [dtraffic.X_beta_name{1}(1,1:2)  dtraffic.X_beta_name{1}(1,5:9)];
 % X_z = ones(ns, 1);
 % X_z_name = {'constant'};
 % X_z = [dtraffic.X_spa{1}(:,1) dtraffic.X_spa{1}(:,3)];
 % X_z_name = [dtraffic.X_spa_name{1}(:,1) dtraffic.X_spa_name{1}(:,3)];
-X_z =  dtraffic.X_spa{1};
-X_z_name = dtraffic.X_spa_name{1};
-X_p = dtraffic.X_spa{1}(:,1);
-X_p_name = dtraffic.X_spa_name{1}(:,1);
-theta_p = 0.01;
-sigma_eta = diag([0.2 0.2 0.2]);
-G = diag([0.8 0.8 0.8]);
+X_z = ones(ns, 1);
+X_z_name = {'constant'};
+X_p = dtraffic.X_spa{1}(:,3);
+X_p_name = dtraffic.X_spa_name{1}(1,3);
+theta_p = 0.1;
+sigma_eta = 0.2;
+G = 0.8;
 v = 1;
 
 [dtraffic, obj_stem_model1, obj_stem_validation1, EM_result1] = model_estimate(dtraffic, X_beta, X_beta_name, ...
                                                                                X_z, X_z_name, ...
                                                                                X_p, X_p_name, ...
-                                                                               theta_p, v, sigma_eta, G, 100);
+                                                                               theta_p, v, sigma_eta, G, 25);
 
 
+plot()
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                           Verify convergence EM                         %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% X_beta = ones(ns,4,T);
-% X_beta(:,1,:) = dtraffic.X_beta{1}(:,1,:); 
-% X_beta(:,2,:) = dtraffic.X_beta{1}(:,3,:); 
-% X_beta(:,3,:) = dtraffic.X_beta{1}(:,6,:); 
-% X_beta(:,4,:) = dtraffic.X_beta{1}(:,7,:); 
-% X_beta_name = {'weekend', 'mean prec', 'US', 'RS'};
+% Process 1
+% X_beta = [dtraffic.X_beta{1}(:,1:2,:)  dtraffic.X_beta{1}(:,5:9,:)];
+% X_beta_name = [dtraffic.X_beta_name{1}(1,1:2)  dtraffic.X_beta_name{1}(1,5:9)];
+% X_z =  dtraffic.X_spa{1};
+% X_z_name = dtraffic.X_spa_name{1};
+% X_p = dtraffic.X_spa{1}(:,1);
+% X_p_name = dtraffic.X_spa_name{1}(:,1);
+% theta_p = 0.1;
+% v = 1;
 % 
-% X_z = ones(ns, 1);
-% X_z_name = {'constant'};
-% X_p = dtraffic.X_spa{1};
-% X_p_name = dtraffic.X_spa_name{1};
-% theta_p = [100 100 100];                    % poco identificabili
-% 
-% models_AIC.info = ones(20,4);
+% models_convergence.info = ones(20,2);
 % for x = 1:20
-%     sigma_eta = randi(10,1) *  rand(1,1);
-%     G = -1 + 2*rand(1,1);
-%     [dtraffic, obj_stem_model, obj_stem_validation, EM_result] = model_estimate(dtraffic, X_beta, X_beta_name, ...
+%     % diag(repelem(randi(10,1) *  rand(1,1),3))
+%     sigma_eta = diag([randi(10,1) *  rand(1,1), randi(10,1) *  rand(1,1), randi(10,1) *  rand(1,1)]);
+%     G = diag([-1 + 2*rand(1,1), -1 + 2*rand(1,1), -1 + 2*rand(1,1)]);
+%     [dtraffic, obj_stem_model, obj_stem_validation1, EM_result1] = model_estimate(dtraffic, X_beta, X_beta_name, ...
 %                                                                                X_z, X_z_name, ...
 %                                                                                X_p, X_p_name, ...
-%                                                                                theta_p, sigma_eta, G, 100);
+%                                                                                theta_p, v, sigma_eta, G, 25);
 % 
-%     models_AIC.info(x,:) = [obj_stem_model.stem_EM_result.logL obj_stem_model.stem_EM_result.AIC sigma_eta G];
-%     models_AIC.models{x} = obj_stem_model;
+%     models_convergence.info(x,:) = [obj_stem_model.stem_EM_result.logL obj_stem_model.stem_EM_result.AIC];
+%     models_convergence.models{x} = obj_stem_model;
+% end
+% 
+% for x = 1:size(models_convergence.models,2)
+%     models_convergence.models{x}.print_par
 % end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -150,10 +153,10 @@ krig.lat_stations = [40.771379; 40.544919; 40.383103; 40.108343];
 krig.lon_stations = [-112.140558; -111.895082; -111.959112; -111.677759];
 
 krig_mask = NaN(size(krig.lat));
-krig_mask(37, 78)= 1;
-krig_mask(62,55)= 1;
-krig_mask(55,39)= 1;
-krig_mask(83,12)= 1;
+krig_mask(37, 78) = 1;
+krig_mask(62,55) = 1;
+krig_mask(55,39) = 1;
+krig_mask(83,12) = 1;
 
 % krig_mask = ones(size(krig.lat));
 
@@ -176,10 +179,10 @@ krig.yhat_spa(3) = mean(obj_stem_krig_result{1}.y_hat(55, 39, :));
 krig.yhat_spa(4) = mean(obj_stem_krig_result{1}.y_hat(83, 12, :));
 
 krig.yhat_std = zeros(size(krig.lat_stations));
-krig.yhat_std(1) = sqrt(mean(obj_stem_krig_result{1}.diag_Var_y_hat(37, 78, :)));
-krig.yhat_std(2) = sqrt(mean(obj_stem_krig_result{1}.diag_Var_y_hat(62, 55, :)));
-krig.yhat_std(3) = sqrt(mean(obj_stem_krig_result{1}.diag_Var_y_hat(55, 39, :)));
-krig.yhat_std(4) = sqrt(mean(obj_stem_krig_result{1}.diag_Var_y_hat(83, 12, :)));
+krig.yhat_std(1) = sqrt(mean(obj_stem_krig_result{1}.diag_Var_y_hat(37, 78, :), "omitnan"));
+krig.yhat_std(2) = sqrt(mean(obj_stem_krig_result{1}.diag_Var_y_hat(62, 55, :), "omitnan"));
+krig.yhat_std(3) = sqrt(mean(obj_stem_krig_result{1}.diag_Var_y_hat(55, 39, :), "omitnan"));
+krig.yhat_std(4) = sqrt(mean(obj_stem_krig_result{1}.diag_Var_y_hat(83, 12, :), "omitnan"));
 
 
 % figure
@@ -230,54 +233,10 @@ c.Label.String = "std mean yhat spatial"; % Label for the colorbar
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%                                kriging                                  %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% figure
-% gs2 = geoscatter(krig.coordinates(:,1),krig.coordinates(:,2) );
-% geobasemap("topographic") 
-% geolimits([40 41],[-112 -111.60]) 
-% gs2.MarkerFaceColor = [1 0 1];
-% title("Cluster selection")
-% 
-% % generate covariates data
-% krig.covariates_data{1} = zeros(4, 10, size(dtraffic.Y{1},2));
-% krig.covariates_names = {'weekend', 'holidays', 'mean temp', 'mean prec', 'traffic on', 'hours', 'interstate', 'US', 'RS', 'constant'};
-% 
-% % Beta krip enrichment
-% krig.covariates_data = zeros(4, 10, size(dtraffic.Y{1},2));
-% krig.covariates_data(:,1,:) = dtraffic.X_beta{1}(1:4,1,:);
-% krig.covariates_data(:,2,:) = dtraffic.X_beta{1}(1:4,2,:);
-% krig.covariates_data(:,3,:) = krig.temp_mean;
-% krig.covariates_data(:,4,:) = krig.prec_mean;
-% krig.covariates_data(:,5,:) = dtraffic.X_beta{1}(1:4,5,:);
-% krig.covariates_data(:,6,:) = dtraffic.X_beta{1}(1:4,6,:);
-% krig.covariates_data(:,7,:) = krig.interstate;
-% krig.covariates_data(:,8,:) = krig.us;
-% krig.covariates_data(:,9,:) = krig.rs;
-% krig.covariates_data(:,10,:) = ones(4,size(dtraffic.Y{1},2));
-% 
-% 
-% % obj_stem_krig_grid = stem_grid(krig.coordinates, 'deg', 'sparse', 'point', [], 'square', 0.5, 0.5);
-% obj_stem_krig_grid = stem_grid(krig.coordinates, 'deg', 'regular', 'point', [2, 2], 'square', 0.5, 0.5);
-% obj_stem_krig_data = stem_krig_data(obj_stem_krig_grid, krig.covariates_data, krig.covariates_names);
-% obj_stem_krig = stem_krig(obj_stem_model1, obj_stem_krig_data);
-% 
-% obj_stem_krig_options = stem_krig_options();
-% obj_stem_krig_result = obj_stem_krig.kriging(obj_stem_krig_options);
-% 
-% figure
-% obj_stem_krig_result{1}.plot(1)
-% 
-% clear krig_lat krig_lon
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%                          Statistics                                     %
+%                          Visualize info                                 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 visualize_info(obj_stem_model1, dtraffic);
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                        Residual analysis                                %
@@ -285,9 +244,31 @@ visualize_info(obj_stem_model1, dtraffic);
 
 residualsTest = visualize_res(obj_stem_model1, dtraffic);
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                          All statistics                                 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+statistics.mean_Y = mean(dtraffic.Y_mean_trans{1});
+statistics.mean_training_R2_s = mean(obj_stem_model1.stem_EM_result.R2, "omitnan");
+statistics.mean_validation_R2_s = mean(obj_stem_model1.stem_validation_result{1}.cv_R2_s, "omitnan");
+statistics.mean_validation_R2_t = mean(obj_stem_model1.stem_validation_result{1}.cv_R2_t, "omitnan");
+statistics.mean_validation_RMSE_t = mean(sqrt(obj_stem_model1.stem_validation_result{1}.cv_mse_t), "omitnan");
+statistics.mean_validation_RMSE_s = mean(sqrt(obj_stem_model1.stem_validation_result{1}.cv_mse_s), "omitnan");
+statistics.log_likelihood = obj_stem_model1.stem_EM_result.logL;   
+statistics.log_likelihood = obj_stem_model1.stem_EM_result.AIC;
+statistics.mean_krig_yhat = mean(krig.yhat_spa);
+statistics.mean_krig_std = mean(krig.yhat_std);
+
+statistics.lbqtest = residualsTest.lbqtest{1};
+statistics.archtest = residualsTest.archtest{1};
+
+figure
+plot(dtraffic.dates, dtraffic.Y_mean_trans{1})
+title("Temporal standardized mean traffic")
+print(gcf,'foo.png','-dpng','-r300');     
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%                        Estimating model                                 %
+%                        functions                                        %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [dtraffic, krig] = setup_traffic(traffic, krig, freq_seasoned, s_data_drop)
