@@ -1,6 +1,7 @@
 clc
 clearvars
 close all
+rng(2)
 
 addpath('../D-STEM/');
 addpath('../D-STEM/Src/');
@@ -11,7 +12,7 @@ load("krig.mat");
 %                          Building setup                                 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-[dtraffic, krig] = setup_traffic(traffic, krig, 1, 0);
+[dtraffic, krig] = setup_traffic(traffic, krig, 0, 0);
 clear traffic
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -23,23 +24,21 @@ ns = size(dtraffic.Y{1}, 1);                         % number of stations
 T = size(dtraffic.Y{1}, 2);                          % number of time steps
 
 % Process 1
-X_beta = dtraffic.X_beta{1};
-X_beta_name = dtraffic.X_beta_name{1};
+% X_beta = dtraffic.X_beta{1};
+% X_beta_name = dtraffic.X_beta_name{1};
+X_beta = [dtraffic.X_beta{1}(:,1:2,:) dtraffic.X_beta{1}(:,5:end,:)];
+X_beta_name = [dtraffic.X_beta_name{1}(1,1:2), dtraffic.X_beta_name{1}(1,5:end)];
 X_z = ones(ns, 1);
 X_z_name = {'constant'};
-% X_z = dtraffic.X_spa{1}(:,2);
-% X_z_name = dtraffic.X_spa_name{1}(1,2);
-% X_z = dtraffic.X_beta{1}(:,5,:);
-% X_z_name = dtraffic.X_beta_name{1}(1,5);
-theta_z = 0.01;
+theta_z = 0.1;
 v_z = 1;
 sigma_eta = 0.2;
 G = 0.8;
-sigma_eps = 0.3;
+sigma_eps = 0.1;
 
 [dtraffic, obj_stem_model1, obj_stem_validation1, EM_result1] = model_estimate(dtraffic, X_beta, X_beta_name, ...
                                                                                X_z, X_z_name, ...
-                                                                               theta_z, v_z, sigma_eta, G, sigma_eps, 1);
+                                                                               theta_z, v_z, sigma_eta, G, sigma_eps, 100);
 
 
 
@@ -78,65 +77,63 @@ sigma_eps = 0.3;
 %                                kriging                                  %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-krig.covariates_data{1} = ones(size(krig.coordinates,1), 10, size(dtraffic.Y{1},2));
-krig.covariates_names = {'weekend', 'holidays', 'mean temp', 'mean prec', 'traffic on', 'hours', 'interstate', 'US', 'RS', 'constant'};
-
-% krig.covariates_data = zeros(size(krig.coordinates,1), 10, size(dtraffic.Y{1},2));
-
-krig.prec_mean = repelem(krig.prec_mean, size(krig.coordinates,1), 1);
-krig.temp_mean = repelem(krig.temp_mean, size(krig.coordinates,1), 1);
-krig.interstate = zeros(size(krig.coordinates,1), size(dtraffic.Y{1},2));
-krig.interstate(1195,:) = ones(1,size(dtraffic.Y{1},2));
-krig.interstate(5516,:) = ones(1,size(dtraffic.Y{1},2));
-krig.interstate(7814,:) = ones(1,size(dtraffic.Y{1},2));
-krig.us = zeros(size(krig.coordinates,1), size(dtraffic.Y{1},2));
-krig.rs = zeros(size(krig.coordinates,1), size(dtraffic.Y{1},2));
-krig.rs(3893,:) = ones(1,size(dtraffic.Y{1},2));
-
-
-krig.covariates_data{1}(:,1,:) = repelem(dtraffic.X_beta{1}(1,1,:), size(krig.coordinates,1), 1);
-krig.covariates_data{1}(:,2,:) = repelem(dtraffic.X_beta{1}(1,2,:), size(krig.coordinates,1), 1);
-krig.covariates_data{1}(:,3,:) = krig.temp_mean;
-krig.covariates_data{1}(:,4,:) = krig.prec_mean;
-krig.covariates_data{1}(:,5,:) = repelem(dtraffic.X_beta{1}(1,5,:), size(krig.coordinates,1), 1);
-krig.covariates_data{1}(:,6,:) = repelem(dtraffic.X_beta{1}(1,6,:), size(krig.coordinates,1), 1);
-krig.covariates_data{1}(:,7,:) = krig.interstate;
-krig.covariates_data{1}(:,8,:) = krig.us;
-krig.covariates_data{1}(:,9,:) = krig.rs;
-krig.covariates_data{1}(:,10,:) = ones(size(krig.coordinates,1), size(dtraffic.Y{1},2));
-
-% krig_lat = [40.771379; 40.544919; 40.383103; 40.108343];
-% krig_lon = [-112.140558; -111.895082; -111.959112; -111.677759];
-
-
-% krig_mask = NaN(size(krig.lat,1), size(krig.lat,1),size(dtraffic.Y{1},1));
-% for x = 1:size(dtraffic.Y{1},1)
-%     krig_mask(37,78,x)= 1;
-%     krig_mask(62,55,x)= 1;
-%     krig_mask(55,39,x)= 1;
-%     krig_mask(83,12,x)= 1;
-% end
-
-krig_mask = NaN(size(krig.lat,1), size(krig.lat,1));
-krig_mask(37, 78)= 1;
-krig_mask(62,55)= 1;
-krig_mask(55,39)= 1;
-krig_mask(83,12)= 1;
-
-obj_stem_krig_grid = stem_grid(krig.coordinates, 'deg', 'regular', 'pixel', size(krig.lat), 'square', 1, 1);
-obj_stem_krig_data = stem_krig_data(obj_stem_krig_grid, krig.covariates_data{1}, krig.covariates_names, krig_mask);
-obj_stem_krig = stem_krig(obj_stem_model1, obj_stem_krig_data);
-obj_stem_krig_options = stem_krig_options();
-obj_stem_krig_options.block_size = 200;
-obj_stem_krig_result = obj_stem_krig.kriging(obj_stem_krig_options);
-
-figure
-
-plot
-
-x = obj_stem_krig_result{1}.plot(3)
-MarkerFaceColor = [1 0 1];
-x.CData = [0 0 0];
+% krig.covariates_data{1} = ones(size(krig.coordinates,1), 10, size(dtraffic.Y{1},2));
+% krig.covariates_names = {'weekend', 'holidays', 'mean temp', 'mean prec', 'traffic on', 'hours', 'interstate', 'US', 'RS', 'constant'};
+% 
+% % krig.covariates_data = zeros(size(krig.coordinates,1), 10, size(dtraffic.Y{1},2));
+% 
+% krig.prec_mean = repelem(krig.prec_mean, size(krig.coordinates,1), 1);
+% krig.temp_mean = repelem(krig.temp_mean, size(krig.coordinates,1), 1);
+% krig.interstate = zeros(size(krig.coordinates,1), size(dtraffic.Y{1},2));
+% krig.interstate(1195,:) = ones(1,size(dtraffic.Y{1},2));
+% krig.interstate(5516,:) = ones(1,size(dtraffic.Y{1},2));
+% krig.interstate(7814,:) = ones(1,size(dtraffic.Y{1},2));
+% krig.us = zeros(size(krig.coordinates,1), size(dtraffic.Y{1},2));
+% krig.rs = zeros(size(krig.coordinates,1), size(dtraffic.Y{1},2));
+% krig.rs(3893,:) = ones(1,size(dtraffic.Y{1},2));
+% 
+% 
+% krig.covariates_data{1}(:,1,:) = repelem(dtraffic.X_beta{1}(1,1,:), size(krig.coordinates,1), 1);
+% krig.covariates_data{1}(:,2,:) = repelem(dtraffic.X_beta{1}(1,2,:), size(krig.coordinates,1), 1);
+% krig.covariates_data{1}(:,3,:) = krig.temp_mean;
+% krig.covariates_data{1}(:,4,:) = krig.prec_mean;
+% krig.covariates_data{1}(:,5,:) = repelem(dtraffic.X_beta{1}(1,5,:), size(krig.coordinates,1), 1);
+% krig.covariates_data{1}(:,6,:) = repelem(dtraffic.X_beta{1}(1,6,:), size(krig.coordinates,1), 1);
+% krig.covariates_data{1}(:,7,:) = krig.interstate;
+% krig.covariates_data{1}(:,8,:) = krig.us;
+% krig.covariates_data{1}(:,9,:) = krig.rs;
+% krig.covariates_data{1}(:,10,:) = ones(size(krig.coordinates,1), size(dtraffic.Y{1},2));
+% 
+% % krig_lat = [40.771379; 40.544919; 40.383103; 40.108343];
+% % krig_lon = [-112.140558; -111.895082; -111.959112; -111.677759];
+% 
+% 
+% % krig_mask = NaN(size(krig.lat,1), size(krig.lat,1),size(dtraffic.Y{1},1));
+% % for x = 1:size(dtraffic.Y{1},1)
+% %     krig_mask(37,78,x)= 1;
+% %     krig_mask(62,55,x)= 1;
+% %     krig_mask(55,39,x)= 1;
+% %     krig_mask(83,12,x)= 1;
+% % end
+% 
+% krig_mask = NaN(size(krig.lat,1), size(krig.lat,1));
+% krig_mask(37, 78)= 1;
+% krig_mask(62,55)= 1;
+% krig_mask(55,39)= 1;
+% krig_mask(83,12)= 1;
+% 
+% obj_stem_krig_grid = stem_grid(krig.coordinates, 'deg', 'regular', 'pixel', size(krig.lat), 'square', 1, 1);
+% obj_stem_krig_data = stem_krig_data(obj_stem_krig_grid, krig.covariates_data{1}, krig.covariates_names, krig_mask);
+% obj_stem_krig = stem_krig(obj_stem_model1, obj_stem_krig_data);
+% obj_stem_krig_options = stem_krig_options();
+% obj_stem_krig_options.block_size = 200;
+% obj_stem_krig_result = obj_stem_krig.kriging(obj_stem_krig_options);
+% 
+% figure
+% 
+% x = obj_stem_krig_result{1}.plot(3)
+% MarkerFaceColor = [1 0 1];
+% x.CData = [0 0 0];
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -146,12 +143,40 @@ x.CData = [0 0 0];
 visualize_info(obj_stem_model1, dtraffic);
 
 
+plot(obj_stem_model1.stem_EM_result.stem_kalmansmoother_result)
+title("Latent variable")
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                        Residual analysis                                %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 residualsTest = visualize_res(obj_stem_model1, dtraffic);
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                          All statistics                                 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+statistics.mean_Y = mean(dtraffic.Y_mean_trans{1});
+
+obj_stem_model1.stem_EM_result.R2(isnan(obj_stem_model1.stem_EM_result.R2)) = 0;
+
+statistics.mean_training_R2_s = mean(obj_stem_model1.stem_EM_result.R2);
+statistics.mean_validation_R2_s = mean(obj_stem_model1.stem_validation_result{1}.cv_R2_s, "omitnan");
+statistics.mean_validation_R2_t = mean(obj_stem_model1.stem_validation_result{1}.cv_R2_t, "omitnan");
+statistics.mean_validation_RMSE_t = mean(sqrt(obj_stem_model1.stem_validation_result{1}.cv_mse_t), "omitnan");
+statistics.mean_validation_RMSE_s = mean(sqrt(obj_stem_model1.stem_validation_result{1}.cv_mse_s), "omitnan");
+statistics.log_likelihood = obj_stem_model1.stem_EM_result.logL;   
+statistics.log_likelihood = obj_stem_model1.stem_EM_result.AIC;
+% statistics.mean_krig_yhat = mean(krig.yhat_spa);
+% statistics.mean_krig_std = mean(krig.yhat_std);
+
+statistics.lbqtest = residualsTest.lbqtest{1};
+statistics.archtest = residualsTest.archtest{1};
+
+figure
+plot(dtraffic.dates, dtraffic.Y_mean_trans{1})
+title("Temporal standardized mean traffic")  
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                        Estimating model                                 %
@@ -161,9 +186,9 @@ function [dtraffic, krig] = setup_traffic(traffic, krig, freq_seasoned, s_data_d
     
     % PARAMETERS TO SET
     if(freq_seasoned > 0)
-        seasonality = false;                                        % enable seasonality        
+        seasonality = true;                                         % enable seasonality        
     else
-        seasonality = true;                                         % enable seasonality
+        seasonality = false;                                        % disable seasonality
     end
 
     d1 = false;                                                      % enable the Seasonal Differencing
@@ -399,7 +424,8 @@ function [dtraffic, obj_stem_model, obj_stem_validation, EM_result] = model_esti
 
     obj_stem_model.print()
     obj_stem_model.print_par()
-    obj_stem_model.	plot_validation()
+    colormap autumn
+    obj_stem_model.plot_validation()
 
     % Result of the EM estimation
     EM_result = obj_stem_model.stem_EM_result;
@@ -434,35 +460,28 @@ function visualize_info(obj_stem_model, dtraffic)
     print(obj_stem_model)
 
     plot(obj_stem_model.stem_EM_result.stem_kalmansmoother_result)
-    title("Latent")
+    title("Latent variable")
 
     figure
-    tiledlayout(3,2)
-    nexttile
-    plot(obj_stem_model.stem_EM_result.R2)
-    ylim([-1.1, 1.1]);
-    title("R2 training")
+    tiledlayout(1,4)
     
     nexttile
     plot(obj_stem_model.stem_validation_result{1}.cv_R2_s)
-    ylim([-1.1, 1.1]);
-    title("R2 validation - ns")
+    ylim([-1.1 1.1])
+    title("R2_{v,s}")
+
+    nexttile
+    plot(obj_stem_model.stem_validation_result{1}.cv_R2_t)
+    ylim([-1.1 1.1])
+    title("R2_{v,t}")
     
     nexttile
     plot(dtraffic.dates, sqrt(obj_stem_model.stem_validation_result{1}.cv_mse_t))
-    title("CV RMSE - ts")
+    title("RMSE_{v,t}")
     
     nexttile
     plot(sqrt(obj_stem_model.stem_validation_result{1}.cv_mse_s))
-    title("CV RMSE - ns")
-    
-    nexttile
-    plot(dtraffic.dates, dtraffic.Y_mean{1})
-    title("Mean traffic raw")
-    
-    nexttile
-    plot(dtraffic.dates, dtraffic.Y_mean_trans{1})
-    title("Mean traffic log")
+    title("RMSE_{v,s}")
 end
 
 function [residualsTest] = visualize_res(obj_stem_model, dtraffic, residualsTest)
@@ -477,18 +496,18 @@ function [residualsTest] = visualize_res(obj_stem_model, dtraffic, residualsTest
 
     residualsTest.lbqtest{1} = lbqtest(res_mean);
     residualsTest.archtest{1} = archtest(res_mean);
-    
+
     figure
     tiledlayout(1,3)
     nexttile
     plot(dtraffic.dates, res_mean)
-    title("Residuals")
+    title("Residuals time series")
     
     nexttile
     histogram(res_mean)
-    title("Residuals")
+    title("Residuals distribution")
     
     nexttile
-    autocorr(res_mean,100)
-    title("Residuals")
+    autocorr(res_mean, 24)
+    title("Residuals correlation")
 end

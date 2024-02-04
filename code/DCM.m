@@ -62,16 +62,10 @@ T = size(dtraffic.Y{1}, 2);                          % number of time steps
 % Process 1
 X_beta = dtraffic.X_beta{1};
 X_beta_name = dtraffic.X_beta_name{1};
-% X_beta = [dtraffic.X_beta{1}(:,1:2,:)  dtraffic.X_beta{1}(:,5:9,:)];
-% X_beta_name = [dtraffic.X_beta_name{1}(1,1:2)  dtraffic.X_beta_name{1}(1,5:9)];
-% X_z = ones(ns, 1);
-% X_z_name = {'constant'};
-% X_z = [dtraffic.X_spa{1}(:,1) dtraffic.X_spa{1}(:,3)];
-% X_z_name = [dtraffic.X_spa_name{1}(:,1) dtraffic.X_spa_name{1}(:,3)];
 X_z = ones(ns, 1);
 X_z_name = {'constant'};
-X_p = dtraffic.X_spa{1}(:,3);
-X_p_name = dtraffic.X_spa_name{1}(1,3);
+X_p = dtraffic.X_spa{1}(:,1);
+X_p_name = dtraffic.X_spa_name{1}(1,1);
 theta_p = 0.1;
 sigma_eta = 0.2;
 G = 0.8;
@@ -80,10 +74,8 @@ v = 1;
 [dtraffic, obj_stem_model1, obj_stem_validation1, EM_result1] = model_estimate(dtraffic, X_beta, X_beta_name, ...
                                                                                X_z, X_z_name, ...
                                                                                X_p, X_p_name, ...
-                                                                               theta_p, v, sigma_eta, G, 25);
+                                                                               theta_p, v, sigma_eta, G, 100);
 
-
-plot()
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -189,47 +181,49 @@ krig.yhat_std(4) = sqrt(mean(obj_stem_krig_result{1}.diag_Var_y_hat(83, 12, :), 
 % obj_stem_krig_result{1}.plot(1)
 
 figure
-tiledlayout(1,3)
-nexttile
-gs1 = geoscatter(dtraffic.latitude, dtraffic.longitude, "filled");
-geobasemap("topographic") 
-geolimits([40 41],[-112.30 -111.10])
-% geobasemap streets
-gs1.Marker = "*";
-gs1.MarkerFaceColor = [0 0 0];
-gs1.MarkerEdgeColor = [0 0 0];
-title("All stations")
-hold on
-gs2 = geoscatter(krig.lat_stations, krig.lon_stations, "filled");
-gs2.MarkerFaceColor = [1 0 0];
+tiledlayout(1,2);
+% nexttile
+% gs1 = geoscatter(dtraffic.latitude, dtraffic.longitude, "filled");
+% geobasemap("topographic") 
+% geolimits([40 41],[-112.30 -111.10])
+% % geobasemap streets
+% gs1.Marker = "*";
+% gs1.MarkerFaceColor = [0 0 0];
+% gs1.MarkerEdgeColor = [0 0 0];
+% title("All stations")
+% hold on
+% gs2 = geoscatter(krig.lat_stations, krig.lon_stations, "filled");
+% gs2.MarkerFaceColor = [1 0 0];
 
-nexttile
+nexttile;
 gs3 = geoscatter(dtraffic.latitude, dtraffic.longitude, "filled");
 geobasemap("topographic") 
 geolimits([40 41],[-112.30 -111.30])
 gs3.Marker = "*";
 gs3.MarkerFaceColor = [0 0 0];
 gs3.MarkerEdgeColor = [0 0 0];
-title("All stations")
+title("Kriging - traffic estimates")
 hold on
 gs4 = geoscatter(krig.lat_stations, krig.lon_stations, 50, krig.yhat_spa, "filled");
-colormap autumn; % Choose your desired colormap
+gs4.MarkerEdgeColor = [0 0 0];
+colormap autumn
 c = colorbar;
 c.Label.String = "mean yhat spatial"; % Label for the colorbar
 
 nexttile
-gs3 = geoscatter(dtraffic.latitude, dtraffic.longitude, "filled");
+gs5 = geoscatter(dtraffic.latitude, dtraffic.longitude, "filled");
 geobasemap("topographic") 
 geolimits([40 41],[-112.30 -111.30])
-gs3.Marker = "*";
-gs3.MarkerFaceColor = [0 0 0];
-gs3.MarkerEdgeColor = [0 0 0];
-title("All stations")
+gs5.Marker = "*";
+gs5.MarkerFaceColor = [0 0 0];
+gs5.MarkerEdgeColor = [0 0 0];
+title("Kriging - std estimates ")
 hold on
-gs5 = geoscatter(krig.lat_stations, krig.lon_stations, 50, krig.yhat_std, "filled");
-colormap autumn; % Choose your desired colormap
-c = colorbar;
-c.Label.String = "std mean yhat spatial"; % Label for the colorbar
+gs6 = geoscatter(krig.lat_stations, krig.lon_stations, 50, krig.yhat_std, "filled");
+gs6.MarkerEdgeColor = [0 0 0];
+colormap autumn
+c2 = colorbar;
+c2.Label.String = "std mean yhat spatial"; % Label for the colorbar
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -249,7 +243,10 @@ residualsTest = visualize_res(obj_stem_model1, dtraffic);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 statistics.mean_Y = mean(dtraffic.Y_mean_trans{1});
-statistics.mean_training_R2_s = mean(obj_stem_model1.stem_EM_result.R2, "omitnan");
+
+obj_stem_model1.stem_EM_result.R2(isnan(obj_stem_model1.stem_EM_result.R2)) = 0;
+
+statistics.mean_training_R2_s = mean(obj_stem_model1.stem_EM_result.R2);
 statistics.mean_validation_R2_s = mean(obj_stem_model1.stem_validation_result{1}.cv_R2_s, "omitnan");
 statistics.mean_validation_R2_t = mean(obj_stem_model1.stem_validation_result{1}.cv_R2_t, "omitnan");
 statistics.mean_validation_RMSE_t = mean(sqrt(obj_stem_model1.stem_validation_result{1}.cv_mse_t), "omitnan");
@@ -506,7 +503,7 @@ function [dtraffic, obj_stem_model, obj_stem_validation, EM_result] = model_esti
     obj_stem_par.v_p = v;
     obj_stem_par.sigma_eta = sigma_eta;
     obj_stem_par.G = G;
-    obj_stem_par.sigma_eps = 0.1;
+    obj_stem_par.sigma_eps = 1;
     obj_stem_model.set_initial_values(obj_stem_par);
     
     % Model estimation
@@ -534,6 +531,7 @@ function [dtraffic, obj_stem_model, obj_stem_validation, EM_result] = model_esti
     tiledlayout(1,2)
     nexttile
     gs1 = geoscatter(dtraffic.latitude, dtraffic.longitude);
+    set(gcf,'Position',[100 100 500 500])
     geobasemap("topographic") 
     geolimits([40 41],[-112 -111.60]) 
     gs1.MarkerFaceColor = [0 0 1];
@@ -541,12 +539,13 @@ function [dtraffic, obj_stem_model, obj_stem_validation, EM_result] = model_esti
     
     nexttile
     gs2 = geoscatter(dtraffic.cluster_choosen(:,1), dtraffic.cluster_choosen(:,2));
+    set(gcf,'Position',[100 100 500 500])
     geobasemap("topographic") 
     geolimits([40 41],[-112 -111.60]) 
     gs2.MarkerFaceColor = [1 0 0];
-
-    
     title("Cluster selection")
+    
+    % exportgraphics(fig1, '.\figures\1.png', 'Resolution', 600);
 end
 
 function visualize_info(obj_stem_model, dtraffic)
@@ -554,33 +553,39 @@ function visualize_info(obj_stem_model, dtraffic)
     print(obj_stem_model)
 
     plot(obj_stem_model.stem_EM_result.stem_kalmansmoother_result)
-    title("Latent")
+    title("Latent variable")
 
     figure
-    tiledlayout(3,2)
-    nexttile
-    plot(obj_stem_model.stem_EM_result.R2)
-    title("R2 training - spatial")
+    tiledlayout(1,4)
+    % nexttile
+    % plot(obj_stem_model.stem_EM_result.R2)
+    % title("R2_ts")
     
     nexttile
     plot(obj_stem_model.stem_validation_result{1}.cv_R2_s)
-    title("R2 validation - spatial")
+    ylim([-1.1 1.1])
+    title("R2_{v,s}")
+
+    nexttile
+    plot(obj_stem_model.stem_validation_result{1}.cv_R2_t)
+    ylim([-1.1 1.1])
+    title("R2_{v,t}")
     
     nexttile
     plot(dtraffic.dates, sqrt(obj_stem_model.stem_validation_result{1}.cv_mse_t))
-    title("CV RMSE - temporal")
+    title("RMSE_{v,t}")
     
     nexttile
     plot(sqrt(obj_stem_model.stem_validation_result{1}.cv_mse_s))
-    title("CV RMSE - spatial")
+    title("RMSE_{v,s}")
     
-    nexttile
-    plot(dtraffic.dates, dtraffic.Y_mean{1})
-    title("Mean traffic raw")
-    
-    nexttile
-    plot(dtraffic.dates, dtraffic.Y_mean_trans{1})
-    title("Mean traffic standardize")
+    % nexttile
+    % plot(dtraffic.dates, dtraffic.Y_mean{1})
+    % title("Mean traffic raw")
+    % 
+    % nexttile
+    % plot(dtraffic.dates, dtraffic.Y_mean_trans{1})
+    % title("Mean traffic standardize")
 end
 
 function [residualsTest] = visualize_res(obj_stem_model, dtraffic, residualsTest)
@@ -600,13 +605,13 @@ function [residualsTest] = visualize_res(obj_stem_model, dtraffic, residualsTest
     tiledlayout(1,3)
     nexttile
     plot(dtraffic.dates, res_mean)
-    title("Residuals")
+    title("Residuals time series")
     
     nexttile
     histogram(res_mean)
-    title("Residuals")
+    title("Residuals distribution")
     
     nexttile
-    autocorr(res_mean,100)
-    title("Residuals")
+    autocorr(res_mean, 24)
+    title("Residuals correlation")
 end
