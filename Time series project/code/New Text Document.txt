@@ -1,0 +1,86 @@
+if(!require('prophet')) install.packages('prophet')
+
+library(prophet)
+library(lubridate)
+
+date_sequence_train <- seq(as.Date("2016-01-01"), as.Date("2020-10-19"), by = "day")
+date_sequence_validation <- seq(as.Date("2020-10-19"), as.Date("2021-12-30"), by = "day")
+
+# Remove NAN columns
+x_train <- x_train[, -12]
+x_train <- x_train[, -12]
+x_validation <- x_validation[, -12]
+x_validation <- x_validation[, -12]
+
+df <- data.frame(ds = date_sequence_train)
+df$y <- y[seq(round(length(y)*0.8))]
+
+
+# Add regressors from x_train to the dataframe
+for (i in 1:ncol(x_train)) {
+  df[, paste0("regressor_", i)] <- x_train[, i]
+}
+
+
+prophet_model <- prophet(daily.seasonality = FALSE)
+prophet_model <- add_country_holidays(prophet_model, country_name = 'IT')
+
+# Add additional regressors to the model
+for (i in 1:ncol(x_train)) {
+  prophet_model <- add_regressor(prophet_model, name = paste0("regressor_", i))
+}
+
+prophet_model <- fit.prophet(prophet_model, df = df)
+
+# Create future dataframe with dates
+future <- data.frame(ds = date_sequence_validation)
+for (i in 1:ncol(x_train)) {
+  future[, paste0("regressor_", i)] <- x_validation[, i]
+}
+
+forecast <- predict(prophet_model, future)
+tail(forecast[c('ds', 'yhat', 'yhat_lower', 'yhat_upper')])
+
+plot(forecast[c('ds', 'yhat', 'yhat_lower', 'yhat_upper')])
+plot(prophet_model, forecast)
+
+prophet_plot_components(prophet_model, forecast)
+
+# Residual distribution
+res_prophet = y_validation - forecast$yhat
+rmse_prophet_validation = sqrt(mean(res_prophet^2))
+par(mfrow = c(1,5))
+hist(res_prophet,40,
+     xlab = "Value",
+     main = "Empirical distribution of residuals") 
+
+plot(res_prophet, pch = "o", col = "blue" ,
+     ylab = "Residual", main = paste0("Residual plot - mean:",round(mean(res_prophet),digits = 4),
+                                      "- var:", round(var(res_prophet),digits = 4)))
+abline(c(0,0),c(0,length(res_prophet)), col= "red", lwd = 2)
+
+boxplot(res_prophet, ylab = "Residuals", main = "Outliers")$out
+
+qqnorm(res_prophet, main='Residuals')
+qqline(res_prophet)
+plot(y_validation, res_prophet, xlab = "y_validation", ylab = "Residuals XGBoost", main = "Scatter plot of residuals")
+
+plot(scale(y_validation), res_prophet, xlab = "y_validation", ylab = "Residuals prophet", main = "Scatter plot of residuals")
+
+
+
+dyplot.prophet(prophet_model, forecast)
+
+
+# training statistics
+y_train_pred <- predict(prophet_model, df)
+y_validation_pred <- predict(prophet_model, future)
+
+prophet_metrics <- calculate_metrics(prophet_model, y_train_pred$yhat, y_train, y_validation_pred$yhat, y_validation)
+print(prophet_metrics)
+
+shapiro.test(res_prophet)                             # H0: normally distributed
+bptest(lm(res_prophet ~ y_validation))                # H0: omoschedasticity
+Box.test(res_prophet, lag = 7, type = "Ljung-Box")    # H0: no correlation
+Box.test(res_prophet, lag = 30, type = "Ljung-Box")
+Box.test(res_prophet, lag = 365, type = "Ljung-Box")
