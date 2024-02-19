@@ -7,7 +7,7 @@ library(lmtest) # Test di eteroschedasticità
 rm(list = ls())  # cleaning the working space
 
 set.seed(1234)
-setwd("C:/Users/fsilv/Desktop/agrimonia")
+setwd("C:/Users/fsilv/Desktop/S4HDD/Time series project/code")
 load("./response_variable.RData")
 load("./covariate_variables.RData")
 
