@@ -494,7 +494,7 @@ function [dtraffic, obj_stem_model, obj_stem_validation, EM_result] = model_esti
     
     % Data transform
     % obj_stem_model.stem_data.log_transform;
-    obj_stem_model.stem_data.standardize;                   % mean = 0 and std = 1
+    % obj_stem_model.stem_data.standardize;                   % mean = 0 and std = 1
     
     % Starting values: try different starting values and see if they converge
     % at the same values 
